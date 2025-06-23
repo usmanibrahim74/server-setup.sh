@@ -6,11 +6,22 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
-# Get user inputs
-read -p "Enter domain name (e.g., staging.appforcepro.com): " domain
-read -p "Enter root directory (e.g., /var/www/appforce/public): " root_dir
-read -p "Enter PHP version (e.g., 8.2): " php_version
-read -p "Use Let's Encrypt certificates? (y/n): " use_le
+# Get user inputs with defaults
+default_domain="staging.appforcepro.com"
+default_root="/var/www/appforce/public"
+default_php="8.3"
+
+read -p "Enter domain name (default: ${default_domain}): " domain
+domain=${domain:-$default_domain}
+
+read -p "Enter root directory (default: ${default_root}): " root_dir
+root_dir=${root_dir:-$default_root}
+
+read -p "Enter PHP version (default: ${default_php}): " php_version
+php_version=${php_version:-$default_php}
+
+read -p "Use Let's Encrypt certificates? (y/n) [y]: " use_le
+use_le=${use_le:-y}
 
 # Set SSL certificate paths
 if [ "$use_le" = "y" ]; then
@@ -37,14 +48,14 @@ server {
 server {
     listen 443 ssl http2;
     listen [::]:443 ssl http2;
-    server_name staging.appforcepro.com;
-    root /var/www/appforce/public;
+    server_name ${domain};
+    root ${root_dir};
     index index.php index.html index.htm;
 
     # SSL Configuration
-    ssl_certificate /etc/letsencrypt/live/staging.appforcepro.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/staging.appforcepro.com/privkey.pem;
-    ssl_trusted_certificate /etc/letsencrypt/live/staging.appforcepro.com/chain.pem;
+    ssl_certificate ${ssl_cert};
+    ssl_certificate_key ${ssl_key};
+    ssl_trusted_certificate ${ssl_cert%/*}/chain.pem;
 
     # SSL Settings
     ssl_session_timeout 1d;
@@ -132,8 +143,8 @@ EOF
 echo "Configuration created at ${config_file}"
 
 # Enable site
-read -p "Enable this site? (y/n): " enable_site
-if [ "$enable_site" = "y" ]; then
+read -p "Enable this site? (y/n) [y]: " enable_site
+enable_site=${enable_site:-y}
     ln -s "$config_file" "/etc/nginx/sites-enabled/${domain}.conf"
     echo "Testing Nginx configuration..."
     nginx -t && systemctl reload nginx
