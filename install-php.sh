@@ -1,19 +1,27 @@
-echo "Installing PHP 8.3 and extensions..."
+echo "Which PHP version would you like to install? (e.g. 8.2, 8.3): "
+read PHP_VERSION
+
+if [[ ! $PHP_VERSION =~ ^[0-9]+\.[0-9]+$ ]]; then
+    echo "Invalid PHP version format. Please use format like 8.2 or 8.3"
+    exit 1
+fi
+
+echo "Installing PHP $PHP_VERSION and extensions..."
 
   apt install -y \
-    php8.3-fpm \
-    php8.3-common \
-    php8.3-mysql \
-    php8.3-xml \
-    php8.3-curl \
-    php8.3-gd \
-    php8.3-imagick \
-    php8.3-cli \
-    php8.3-dev \
-    php8.3-imap \
-    php8.3-mbstring \
-    php8.3-opcache \
-    php8.3-soap \
-    php8.3-zip \
-    php8.3-bcmath \
-    php8.3-intl
+    php$PHP_VERSION-fpm \
+    php$PHP_VERSION-common \
+    php$PHP_VERSION-mysql \
+    php$PHP_VERSION-xml \
+    php$PHP_VERSION-curl \
+    php$PHP_VERSION-gd \
+    php$PHP_VERSION-imagick \
+    php$PHP_VERSION-cli \
+    php$PHP_VERSION-dev \
+    php$PHP_VERSION-imap \
+    php$PHP_VERSION-mbstring \
+    php$PHP_VERSION-opcache \
+    php$PHP_VERSION-soap \
+    php$PHP_VERSION-zip \
+    php$PHP_VERSION-bcmath \
+    php$PHP_VERSION-intl
