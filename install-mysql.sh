@@ -18,10 +18,10 @@ export DEBIAN_FRONTEND=noninteractive
   debconf-set-selections <<< "mysql-server mysql-server/root_password_again password $MYSQL_ROOT_PASS"
 
 # Update package list
-apt-get update
+apt update
 
 # Install MySQL server
-if apt-get install -y mysql-server; then
+if apt install -y mysql-server; then
     echo "MySQL Server installed successfully"
 
     # Start MySQL service
