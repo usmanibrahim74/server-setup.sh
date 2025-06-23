@@ -1,5 +1,5 @@
 echo "Installing required packages..."
-  apt-get install -y \
+  apt install -y \
     nginx \
     git \
     curl \
