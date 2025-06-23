@@ -24,7 +24,7 @@ read -p "Use Let's Encrypt certificates? (y/n) [y]: " use_le
 use_le=${use_le:-y}
 
 # Set SSL certificate paths
-if [ "$use_le" = "y" ]; then
+if [[ "${use_le,,}" =~ ^y(es)?$ ]]; then
     ssl_cert="/etc/letsencrypt/live/${domain}/fullchain.pem"
     ssl_key="/etc/letsencrypt/live/${domain}/privkey.pem"
 else
@@ -145,8 +145,16 @@ echo "Configuration created at ${config_file}"
 # Enable site
 read -p "Enable this site? (y/n) [y]: " enable_site
 enable_site=${enable_site:-y}
+if [[ "${enable_site,,}" =~ ^y(es)?$ ]]; then
     ln -s "$config_file" "/etc/nginx/sites-enabled/${domain}.conf"
     echo "Testing Nginx configuration..."
-    nginx -t && systemctl reload nginx
-    echo "Site enabled and Nginx reloaded"
+    if nginx -t; then
+        systemctl reload nginx
+        echo "Nginx configuration reloaded successfully"
+    else
+        echo "Nginx configuration test failed" >&2
+        exit 1
+    fi
+else
+    echo "Site configuration created but not enabled"
 fi
