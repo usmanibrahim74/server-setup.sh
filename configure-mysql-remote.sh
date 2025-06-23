@@ -14,7 +14,6 @@ max_user_connections = 20
 EOF
 
 # Configure firewall
-ufw --force enable
 ufw allow 3306/tcp
 
 # Set proper permissions and restart MySQL

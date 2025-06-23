@@ -6,7 +6,7 @@ if command -v node &> /dev/null; then
 else
 echo "Installing Node.js LTS and npm..."
   curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -
-  apt-get install -y nodejs
+  apt install -y nodejs
 echo "Installed versions:"
 node --version
 npm --version
