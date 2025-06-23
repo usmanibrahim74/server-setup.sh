@@ -1,0 +1,17 @@
+read -p "Enter MySQL root password: " MYSQL_ROOT_PASS
+read -p "Enter remote MySQL username: " REMOTE_USER
+read -p "Enter strong password for $REMOTE_USER: " REMOTE_PASS
+read -p "Allow remote access from IP/CIDR (e.g., 192.168.1.0/24): " ALLOWED_CIDR
+
+echo "Creating MySQL remote user..."
+  mysql --user=root --password="$MYSQL_ROOT_PASS" <<-EOF
+    CREATE USER '$REMOTE_USER'@'$ALLOWED_CIDR' IDENTIFIED BY '$REMOTE_PASS';
+
+    GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP,
+    RELOAD, PROCESS, REFERENCES, INDEX, ALTER,
+    CREATE TEMPORARY TABLES, LOCK TABLES, EXECUTE,
+    CREATE VIEW, SHOW VIEW, CREATE ROUTINE, ALTER ROUTINE,
+    EVENT, TRIGGER ON *.* TO '$REMOTE_USER'@'$ALLOWED_CIDR' WITH GRANT OPTION;
+
+    FLUSH PRIVILEGES;
+EOF
