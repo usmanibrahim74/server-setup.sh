@@ -1,0 +1,141 @@
+#!/bin/bash
+
+# Check if running as root
+if [ "$(id -u)" -ne 0 ]; then
+    echo "This script must be run as root" >&2
+    exit 1
+fi
+
+# Get user inputs
+read -p "Enter domain name (e.g., staging.appforcepro.com): " domain
+read -p "Enter root directory (e.g., /var/www/appforce/public): " root_dir
+read -p "Enter PHP version (e.g., 8.2): " php_version
+read -p "Use Let's Encrypt certificates? (y/n): " use_le
+
+# Set SSL certificate paths
+if [ "$use_le" = "y" ]; then
+    ssl_cert="/etc/letsencrypt/live/${domain}/fullchain.pem"
+    ssl_key="/etc/letsencrypt/live/${domain}/privkey.pem"
+else
+    read -p "Enter full path to SSL certificate: " ssl_cert
+    read -p "Enter full path to SSL private key: " ssl_key
+fi
+
+# Generate config file
+config_file="/etc/nginx/sites-available/${domain}.conf"
+
+cat > "$config_file" <<EOF
+# HTTP redirect to HTTPS
+server {
+    listen 80;
+    listen [::]:80;
+    server_name ${domain};
+    return 301 https://\$host\$request_uri;
+}
+
+# HTTPS server block
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name staging.appforcepro.com;
+    root /var/www/appforce/public;
+    index index.php index.html index.htm;
+
+    # SSL Configuration
+    ssl_certificate /etc/letsencrypt/live/staging.appforcepro.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/staging.appforcepro.com/privkey.pem;
+    ssl_trusted_certificate /etc/letsencrypt/live/staging.appforcepro.com/chain.pem;
+
+    # SSL Settings
+    ssl_session_timeout 1d;
+    ssl_session_cache shared:MozSSL:10m;
+    ssl_session_tickets off;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384';
+    ssl_prefer_server_ciphers off;
+    ssl_ecdh_curve secp384r1;
+    ssl_stapling on;
+    ssl_stapling_verify on;
+    resolver 8.8.8.8 8.8.4.4 valid=300s;
+    resolver_timeout 5s;
+
+    # Security headers
+    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Content-Security-Policy "default-src 'self' https:; font-src 'self' https: data:; img-src 'self' https: data:; script-src 'self' https: 'unsafe-inline'; style-src 'self' https: 'unsafe-inline'" always;
+
+    # Laravel front controller pattern
+    location / {
+        try_files \$uri \$uri/ /index.php?\$query_string;
+    }
+
+    # PHP handling with increased timeouts
+    location ~ \.php\$ {
+        fastcgi_pass unix:/var/run/php/php${php_version}-fpm.sock;
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME \$realpath_root\$fastcgi_script_name;
+        include fastcgi_params;
+
+        # Timeout settings
+        fastcgi_read_timeout 300;
+        fastcgi_connect_timeout 60;
+        fastcgi_send_timeout 180;
+    }
+
+    # Security - deny access to hidden files
+    location ~ /\.(?!well-known).* {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
+
+    # Deny access to sensitive files
+    location ~* ^/(\.env|\.env.example|composer\.lock|\.git) {
+        deny all;
+        return 403;
+    }
+
+    # Protect system directories
+    location ~* /(storage|bootstrap|config|database|resources|routes|tests|node_modules) {
+        deny all;
+        return 403;
+    }
+
+    # Optimize static file serving
+    location ~* \.(jpg|jpeg|gif|png|css|js|ico|webp|svg|woff2)\$ {
+        expires 365d;
+        add_header Cache-Control "public, immutable";
+        try_files \$uri =404;
+    }
+
+    # Disable logging for favicon & robots.txt
+    location = /favicon.ico { access_log off; log_not_found off; }
+    location = /robots.txt  { access_log off; log_not_found off; }
+
+    # Error handling
+    error_page 404 /index.php;
+    error_page 500 502 503 504 /error.html;
+
+    # Gzip compression
+    gzip on;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_comp_level 6;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css text/xml application/json application/javascript application/xml+rss application/atom+xml image/svg+xml;
+}
+EOF
+
+echo "Configuration created at ${config_file}"
+
+# Enable site
+read -p "Enable this site? (y/n): " enable_site
+if [ "$enable_site" = "y" ]; then
+    ln -s "$config_file" "/etc/nginx/sites-enabled/${domain}.conf"
+    echo "Testing Nginx configuration..."
+    nginx -t && systemctl reload nginx
+    echo "Site enabled and Nginx reloaded"
+fi
