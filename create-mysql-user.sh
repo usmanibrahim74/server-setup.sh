@@ -7,10 +7,10 @@ DEFAULT_REMOTE_PASS=$(openssl rand -base64 12)
 
 # Prompt for inputs with defaults
 read -p "Enter MySQL root password: " MYSQL_ROOT_PASS
-if [ -z "$MYSQL_ROOT_PASS" ]; then
-    echo "Error: MySQL root password cannot be empty"
-    exit 1
-fi
+#if [ -z "$MYSQL_ROOT_PASS" ]; then
+#    echo "Error: MySQL root password cannot be empty"
+#    exit 1
+#fi
 
 read -p "Enter remote MySQL username [$DEFAULT_REMOTE_USER]: " REMOTE_USER
 REMOTE_USER=${REMOTE_USER:-$DEFAULT_REMOTE_USER}
