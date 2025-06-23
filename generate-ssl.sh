@@ -3,3 +3,4 @@ if [ -n "$DOMAIN" ]; then
     echo "Creating SSL certificate for $DOMAIN..."
     certbot --nginx -d $DOMAIN --non-interactive --agree-tos --register-unsafely-without-email --redirect
   fi
+sudo systemctl enable certbot.timer
