@@ -3,8 +3,8 @@
 echo "Configuring MySQL for remote access..."
 
 # Create MySQL configuration directory and file for remote access
-mkdir -p /etc/mysql/conf.d/
-  cat > /etc/mysql/conf.d/remote.cnf <<EOF
+mkdir -p /etc/mysql/mysql.conf.d/
+  cat > /etc/mysql/mysql.conf.d/remote.cnf <<EOF
 [mysqld]
 bind-address = 0.0.0.0
 
