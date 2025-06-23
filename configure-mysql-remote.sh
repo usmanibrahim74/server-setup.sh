@@ -13,12 +13,25 @@ max_connections = 100
 max_user_connections = 20
 EOF
 
-# Allow MySQL port through firewall
+# Configure firewall
+ufw --force enable
 ufw allow 3306/tcp
 
-# Restart MySQL service
-  chmod 644 /etc/mysql/conf.d/remote.cnf && systemctl restart mysql
+# Set proper permissions and restart MySQL
+  chmod 644 /etc/mysql/conf.d/remote.cnf
 
-echo "MySQL configured for remote access. Make sure you have:"
-echo "1. Created a remote user with proper privileges"
-echo "2. Configured your server's security groups/firewall rules"
+# Ensure MySQL service is started and enabled
+systemctl enable mysql
+  systemctl restart mysql
+
+# Wait for MySQL to fully start
+sleep 5
+# Verify configuration
+echo "Configuration complete. Verifying settings..."
+netstat -tlpn | grep 3306
+ufw status | grep 3306
+
+echo "MySQL configured for remote access. Please verify:"
+echo "1. MySQL is running and listening (see netstat output above)"
+echo "2. UFW is enabled and port 3306 is allowed (see ufw output above)"
+echo "3. You can connect using: mysql -h <server_ip> -u appforce_super -p"
