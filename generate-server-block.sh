@@ -33,8 +33,8 @@ else
 fi
 
 # Check if configuration already exists
-config_file="/etc/nginx/sites-available/${domain}.conf"
-enabled_file="/etc/nginx/sites-enabled/${domain}.conf"
+config_file="/etc/nginx/sites-available/${domain}"
+enabled_file="/etc/nginx/sites-enabled/${domain}"
 
 if [ -f "$config_file" ] || [ -f "$enabled_file" ]; then
     echo "Configuration for ${domain} already exists!" >&2
