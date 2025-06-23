@@ -11,3 +11,5 @@ echo "Installed versions:"
 node --version
 npm --version
 fi
+
+npm install -g vhost-generator
