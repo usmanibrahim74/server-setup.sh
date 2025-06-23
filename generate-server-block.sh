@@ -32,9 +32,21 @@ else
     read -p "Enter full path to SSL private key: " ssl_key
 fi
 
-# Generate config file
+# Check if configuration already exists
 config_file="/etc/nginx/sites-available/${domain}.conf"
+enabled_file="/etc/nginx/sites-enabled/${domain}.conf"
 
+if [ -f "$config_file" ] || [ -f "$enabled_file" ]; then
+    echo "Configuration for ${domain} already exists!" >&2
+    read -p "Do you want to overwrite it? (y/n) [n]: " overwrite
+    overwrite=${overwrite:-n}
+    if [[ ! "${overwrite,,}" =~ ^y(es)?$ ]]; then
+        echo "Aborting..." >&2
+        exit 1
+    fi
+    # Remove existing symlink if it exists
+    [ -L "$enabled_file" ] && rm "$enabled_file"
+fi
 cat > "$config_file" <<EOF
 # HTTP redirect to HTTPS
 server {
@@ -146,8 +158,9 @@ echo "Configuration created at ${config_file}"
 read -p "Enable this site? (y/n) [y]: " enable_site
 enable_site=${enable_site:-y}
 if [[ "${enable_site,,}" =~ ^y(es)?$ ]]; then
-    ln -s "$config_file" "/etc/nginx/sites-enabled/${domain}.conf"
-    echo "Testing Nginx configuration..."
+    # Remove existing symlink if it exists
+    [ -L "$enabled_file" ] && rm "$enabled_file"
+    ln -s "$config_file" "$enabled_file"
     if nginx -t; then
         systemctl reload nginx
         echo "Nginx configuration reloaded successfully"
