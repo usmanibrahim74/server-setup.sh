@@ -1,5 +1,6 @@
 echo "Installing PHP 8.3 and extensions..."
-  apt-get install -y \
+
+  apt install -y \
     php8.3-fpm \
     php8.3-common \
     php8.3-mysql \
