@@ -102,6 +102,9 @@ server {
         fastcgi_param SCRIPT_FILENAME \$realpath_root\$fastcgi_script_name;
         include fastcgi_params;
 
+        # FastCGI buffer settings
+        fastcgi_buffer_size 16k;
+        fastcgi_buffers 4 16k;
         # Timeout settings
         fastcgi_read_timeout 300;
         fastcgi_connect_timeout 60;
